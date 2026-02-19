@@ -1,5 +1,6 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import {env} from "../../config/index.js";
+import {env,envkey,upsertEnvVar} from "../../config/index.js";
+
 const LotteryModule = buildModule("LotteryModule", (m) => {
   const vrfCoordinator = env.vrfCoordinator ?? "";
   const subscriptionId = env.subscriptionId ?? "";

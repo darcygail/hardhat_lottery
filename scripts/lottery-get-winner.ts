@@ -15,10 +15,15 @@ const walletClients = await viem.getWalletClients();
 const player1 = walletClients[1]; // 使用第一个钱包客户端
 const player2 = walletClients[2]; // 使用第二个钱包客户端
 
+
 const lottery = await viem.getContractAt(
   "Lottery",
   lotteryAddress as `0x${string}`,
 );
-
 const winner = await lottery.read.getRecentWinner();
 console.log("Current winner:", winner);
+
+const winnerBalance = await publicClient.getBalance({
+  address: winner,
+});
+console.log("Winner balance:", Number(winnerBalance)/10**18, "ETH");

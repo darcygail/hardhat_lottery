@@ -1,6 +1,5 @@
 import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
 import { configVariable, defineConfig } from "hardhat/config";
-import env from "dotenv";
 export default defineConfig({
   plugins: [hardhatToolboxViemPlugin],
   solidity: {
