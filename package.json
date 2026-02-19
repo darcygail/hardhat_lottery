@@ -1,0 +1,25 @@
+{
+  "name": "hardhat3_lottery",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "format": "prettier --write \"**/*.{ts,sol}\"",
+    "format:check": "prettier --check \"**/*.{ts,sol}\""
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^3.0.7",
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.2",
+    "@types/node": "^22.19.11",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.4",
+    "hardhat": "^3.1.8",
+    "prettier": "^3.8.1",
+    "prettier-plugin-solidity": "^2.2.1",
+    "typescript": "~5.8.0",
+    "viem": "^2.46.2"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^1.5.0",
+    "dotenv": "^17.3.1",
+    "solidity-parse": "^0.0.2"
+  }
+}
