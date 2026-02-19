@@ -3,12 +3,14 @@ pragma solidity ^0.8.28;
 
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
-contract Lottery is VRFConsumerBaseV2Plus {
+contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
     /* Errors */
     error Lottery__NotEnoughEntryFee();
     error Lottery__TransferFailed();
     error Lottery__CurrRoundLocked();
+    error Lottery__NotNeedToDraw();
 
     /* Type declarations */
     enum RaffleStatus {
@@ -24,11 +26,13 @@ contract Lottery is VRFConsumerBaseV2Plus {
     uint256 private immutable i_subscriptionId;
     uint32 private immutable i_callbackGasLimit;
     bytes32 private immutable i_keyHash;
+    uint256 private immutable i_interval;
 
     // Storage variables
     address[] private s_players;
     address private s_recentWinner;
     RaffleStatus private s_status;
+    uint256 private s_lastTimeStamp;
 
     // Constants
     uint32 private constant NUM_WORDS = 1;
@@ -45,7 +49,8 @@ contract Lottery is VRFConsumerBaseV2Plus {
         uint256 entryFee,
         bytes32 keyHash,
         uint32 callbackGasLimit,
-        uint16 requestConfirmations
+        uint16 requestConfirmations,
+        uint256 interval
     ) VRFConsumerBaseV2Plus(vrfCoordinator) {
         i_subscriptionId = subscriptionId;
         i_manager = msg.sender;
@@ -53,7 +58,9 @@ contract Lottery is VRFConsumerBaseV2Plus {
         i_keyHash = keyHash;
         i_callbackGasLimit = callbackGasLimit;
         i_requestConfirmations = requestConfirmations;
+        i_interval = interval;
         s_status = RaffleStatus.OPEN;
+        s_lastTimeStamp = block.timestamp;
     }
 
     /* External Functions */
@@ -93,6 +100,31 @@ contract Lottery is VRFConsumerBaseV2Plus {
         emit RaffleWinnerRequested(requestId);
     }
 
+    function checkUpkeep(
+        bytes calldata
+    ) external override view returns (bool, bytes memory) {
+        bytes memory performData = "0x";
+        if (s_status != RaffleStatus.OPEN) {
+            return (false, performData);
+        }
+        if (s_players.length == 0 || address(this).balance == 0) {
+            return (false, performData);
+        }
+        if (block.timestamp - s_lastTimeStamp < i_interval) {
+            return (false, performData);
+        }
+
+        return (true, performData);
+    }
+
+    function performUpkeep(bytes calldata performData) external {
+        (bool upkeepNeeded, ) = this.checkUpkeep(performData);
+        if (!upkeepNeeded) {
+            revert Lottery__NotNeedToDraw();
+        }
+        this.requestRandomWords(false);
+    }
+
     /* Internal Functions */
     function fulfillRandomWords(
         uint256,
@@ -104,6 +136,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         s_players = new address[](0);
         s_recentWinner = recentWinner;
         s_status = RaffleStatus.OPEN;
+        s_lastTimeStamp = block.timestamp;
 
         (bool success, ) = payable(recentWinner).call{
             value: address(this).balance
