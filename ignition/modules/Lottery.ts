@@ -8,6 +8,7 @@ const LotteryModule = buildModule("LotteryModule", (m) => {
   const keyHash =env.keyHash;
   const callbackGasLimit = Number(env.callbackGasLimit);
   const requestConfirmations = Number(env.requestConfirmations ?? "");
+  const interval = Number(env.interval ?? "");
 
   if (!vrfCoordinator) {
     throw new Error("Missing env: VRF_COORDINATOR");
@@ -23,6 +24,7 @@ const LotteryModule = buildModule("LotteryModule", (m) => {
     keyHash,
     callbackGasLimit,
     requestConfirmations,
+    interval,
   ]);
 
   return { lottery };

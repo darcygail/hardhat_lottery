@@ -36,6 +36,9 @@ for (const log of txReceipt.logs) {
     });
 
     console.log("Decoded event:", decoded);
+    const requestId = decoded.args.requestId;
+
+    
   } catch (e) {
     // 非合约事件可以忽略
     continue;

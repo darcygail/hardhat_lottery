@@ -44,12 +44,12 @@ contract LotteryTest is Test {
     function setUp() external {
         s_coordinator = new VRFCoordinatorV2PlusMock();
         s_lottery = new Lottery(
-            1,
             address(s_coordinator),
             ENTRY_FEE,
             KEY_HASH,
             CALLBACK_GAS_LIMIT,
-            REQUEST_CONFIRMATIONS
+            REQUEST_CONFIRMATIONS,
+            60*60*1
         );
     }
 

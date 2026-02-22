@@ -14,6 +14,7 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
 
     /* Type declarations */
     enum RaffleStatus {
+        INIT,
         OPEN,
         CALCULATING
     }
@@ -23,12 +24,12 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
     address private immutable i_manager;
     uint256 private immutable i_entryFee;
     uint16 private immutable i_requestConfirmations;
-    uint256 private immutable i_subscriptionId;
     uint32 private immutable i_callbackGasLimit;
     bytes32 private immutable i_keyHash;
     uint256 private immutable i_interval;
 
     // Storage variables
+    uint256 private s_subscriptionId;
     address[] private s_players;
     address private s_recentWinner;
     RaffleStatus private s_status;
@@ -44,7 +45,6 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
 
     /* Functions */
     constructor(
-        uint256 subscriptionId,
         address vrfCoordinator,
         uint256 entryFee,
         bytes32 keyHash,
@@ -52,14 +52,13 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
         uint16 requestConfirmations,
         uint256 interval
     ) VRFConsumerBaseV2Plus(vrfCoordinator) {
-        i_subscriptionId = subscriptionId;
         i_manager = msg.sender;
         i_entryFee = entryFee;
         i_keyHash = keyHash;
         i_callbackGasLimit = callbackGasLimit;
         i_requestConfirmations = requestConfirmations;
         i_interval = interval;
-        s_status = RaffleStatus.OPEN;
+        s_status = RaffleStatus.INIT;
         s_lastTimeStamp = block.timestamp;
     }
 
@@ -80,12 +79,18 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
     function requestRandomWords(
         bool enableNativePayment
     ) external onlyOwner returns (uint256 requestId) {
+        return _requestRandomWords(enableNativePayment);
+    }
+
+    function _requestRandomWords(
+        bool enableNativePayment
+    ) internal returns (uint256 requestId) {
         s_status = RaffleStatus.CALCULATING;
 
         requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: i_keyHash,
-                subId: i_subscriptionId,
+                subId: s_subscriptionId,
                 requestConfirmations: i_requestConfirmations,
                 callbackGasLimit: i_callbackGasLimit,
                 numWords: NUM_WORDS,
@@ -102,7 +107,7 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
 
     function checkUpkeep(
         bytes calldata
-    ) external override view returns (bool, bytes memory) {
+    ) external view override returns (bool, bytes memory) {
         bytes memory performData = "0x";
         if (s_status != RaffleStatus.OPEN) {
             return (false, performData);
@@ -117,12 +122,12 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
         return (true, performData);
     }
 
-    function performUpkeep(bytes calldata performData) external {
+    function performUpkeep(bytes calldata performData) external override {
         (bool upkeepNeeded, ) = this.checkUpkeep(performData);
         if (!upkeepNeeded) {
             revert Lottery__NotNeedToDraw();
         }
-        this.requestRandomWords(false);
+        _requestRandomWords(false);
     }
 
     /* Internal Functions */
@@ -168,5 +173,16 @@ contract Lottery is VRFConsumerBaseV2Plus, AutomationCompatible {
 
     function getManager() external view returns (address) {
         return i_manager;
+    }
+
+    function getJackpot() external view returns (uint256) {
+        return address(this).balance;
+    }
+
+    function setSubscriptionId(uint256 subscriptionId) external onlyOwner {
+        s_subscriptionId = subscriptionId;
+        if (s_status == RaffleStatus.INIT) {
+            s_status = RaffleStatus.OPEN;
+        }
     }
 }

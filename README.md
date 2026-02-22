@@ -77,16 +77,66 @@ npx hardhat ignition deploy --network sepolia ...
 | ------ | -------- |
 | `test` | 调用 `npx hardhat test`，运行所有 Solidity 与 TypeScript 集成测试，可配合 `-- --network xxx` 指定网络。 |
 | `dev:node` | 调用 `npx hardhat node`，启动本地 Hardhat 网络，便于本地部署与调试。 |
-| `vrf-deploy` | 在指定网络部署 VRFCoordinator 合约，控制台输出 VRFCoordinator 合约地址；用于 localhost 测试流程步骤 1。 |
-| `vrf-create-sub` | 创建 VRF 订阅并为其充值 LINK，控制台输出 `subscriptionId`；用于 localhost 测试流程步骤 2。 |
-| `lottery-deploy` | 部署 Lottery 合约，控制台输出 Lottery 合约地址；用于 localhost 测试流程步骤 3。 |
-| `vrf-add-consume` | 将 Lottery 合约地址添加为 VRF 订阅的消费者（consumer）；用于 localhost 测试流程步骤 4。 |
-| `lottery-enter` | 调用 Lottery 合约的 `enter` 函数，向当前奖池新增参与者；可多次执行以增加多个玩家；对应 localhost 测试流程步骤 5。 |
-| `lottery-draw` | 作为管理员触发开奖逻辑，请求 VRF 随机数（通常调用 `requestRandomWords` 或类似函数）；对应 localhost 测试流程步骤 6。 |
-| `vrf-fullfill` | 在本地 / 测试环境中，模拟 Chainlink VRF 回调，调用 VRFCoordinator 的 `fulfillRandomWords` 逻辑，使 Lottery 获得随机数并确定中奖人；对应 localhost 测试流程步骤 7。 |
-| `lottery-get-winner` | 查询并打印当前期次的中奖人地址（调用 Lottery 合约的 `getWinner` / `winner` 等只读函数）；对应 localhost 测试流程步骤 8。 |
+| `lottery-enter` | 在 `scripts/lottery-enter.ts` 中发起 `enter` 交易，向当前奖池新增参与者；可多次执行以增加玩家。 |
+| `lottery-draw` | 在 `scripts/lottery-draw.ts` 中由管理员触发开奖逻辑，请求 VRF 随机数（调用合约的请求函数）。 |
+| `lottery-jackpot` | 在 `scripts/lottery-jackpot.ts` 中查询并打印合约余额（奖池）。 |
+| `vrf-fullfill` | 在 `scripts/vrf-fullfill.ts` 中模拟 Chainlink VRF 回调，调用 VRFCoordinator 的回调接口使 Lottery 获得随机数并确定中奖人。 |
+| `check-keepup` | 在 `scripts/check-keepup.ts` 中定时检查合约的 `checkUpkeep` 并在满足条件时执行 `performUpkeep`（用于本地自动化测试）。 |
+| `check-request-random` | 在 `scripts/check-request-random.ts` 中检查并展示随机数请求相关事件/状态（脚本名以项目实际文件为准）。 |
+| `init` | `scripts/init.ts`：项目内置的一些初始化脚本，具体行为请查看脚本内容。 |
+| `tool-trans` | `scripts/tool-trans.ts`：辅助工具脚本（用途见脚本内注释）。 |
 
 > 提示：以上脚本内部通常是对 `npx hardhat run scripts/xxx.ts --network <network>` 的封装，具体请查看 `package.json` 中各个 script 的真实命令。
+
+## 五、前端（Web）介绍
+
+项目包含一个简单的 Next.js 前端位于 `web/` 子目录，用于与已部署的 Lottery 合约交互：
+
+- 主要功能：
+  - 显示合约地址、当前参与人数、奖池余额与 entry fee。
+  - 钱包连接（`web3uikit` 的 `ConnectButton`）。
+  - 输入参与金额并调用 `enter` 参与抽奖。
+- 开发与运行：
+  ```bash
+  cd web
+  npm install
+  npm run dev
+  ```
+- 前端关键文件：
+  - `web/app/page.tsx`：主页面，包含合约信息展示与参与交互逻辑。
+  - `web/app/components/Header.tsx`：头部，包含 ConnectButton。
+  - `web/app/globals.css`：全局样式与主题变量。
+- 配置注意：
+  - 默认 `web/app/page.tsx` 文件内有 `LOTTERY_ADDRESS` 常量，部署后请将其替换为你当前网络下的 Lottery 地址，或修改前端以通过环境变量读取地址。
+
+## 六、脚本与前端示例流程（整合）
+
+1. 启动本地链：
+   ```bash
+   npm run dev:node
+   ```
+2. 部署 VRFCoordinator,Lottery 并将初始化：
+   ```bash
+  # 部署
+  npx hardhat ignition deploy ignition/modules/deployAll.ts --network localhost
+  # 拷贝 address 到.env.localhost中
+  # 初始化
+  npx hardhat run scripts/init.ts --network localhost
+  # 启动定时器
+  npx hardhat run scripts/check-keepup.ts --network localhost
+  # 启动随机填充
+  npx hardhat run scripts/vrf-fullfill.ts --network localhost
+  ```
+3. 在前端（`web/`）运行并把 `LOTTERY_ADDRESS` 指向已部署地址：
+   ```bash
+   cd web
+   npm run dev
+   ```
+4. 使用前端 UI 或脚本 `lottery-enter.ts` 发起参与交易，再调用 `lottery-draw` + `vrf-fullfill` 完成开奖。
+
+---
+
+接下来可按需扩展文档：添加部署示例输出、环境变量完整范例或前端自定义说明。
 
 ### 2. 常用 Hardhat 命令（底层命令）
 

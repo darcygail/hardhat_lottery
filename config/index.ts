@@ -27,43 +27,7 @@ export const env = {
   baseFee: process.env.BASE_FEE ?? "",
   gasPriceLink: process.env.GAS_PRICE_LINK ?? "",
   weiPerUnitLink: process.env.WEI_PER_UNIT_LINK ?? "",
-
   customerAddress: process.env.LOTTERY_ADDRESS ?? "",
+  interval: Number(process.env.INTERVAL ?? ""),
 };
-
-// 新增：统一管理所有 env key 映射
-export const envkey = {
-  // LotteryModule
-  entryFee: "ENTRY_FEE",
-  lotteryAddress: "LOTTERY_ADDRESS",
-
-  // VRFCoordinator Parameters
-  vrfCoordinator: "VRF_COORDINATOR",
-  subscriptionId: "SUBSCRIPTION_ID",
-  keyHash: "KEY_HASH",
-  callbackGasLimit: "CALLBACK_GAS_LIMIT",
-  requestConfirmations: "REQUEST_CONFIRMATIONS",
-
-  // VRFCoordinatorModule
-  baseFee: "BASE_FEE",
-  gasPriceLink: "GAS_PRICE_LINK",
-  weiPerUnitLink: "WEI_PER_UNIT_LINK",
-
-  customerAddress: "LOTTERY_ADDRESS",
-};
-
-export function upsertEnvVar(key: string, value: string) {
-  let content = existsSync(pathName) ? readFileSync(pathName, "utf8") : "";
-
-  const line = `${key}=${value}`;
-  const regex = new RegExp(`^${key}=.*$`, "m");
-
-  if (regex.test(content)) {
-    content = content.replace(regex, line);
-  } else {
-    if (content && !content.endsWith("\n")) content += "\n";
-    content += line + "\n";
-  }
-
-  writeFileSync(pathName, content, "utf8");
-}
+  

@@ -20,5 +20,6 @@ const lottery = await viem.getContractAt(
   lotteryAddress as `0x${string}`,
 );
 
-const lotteryBalance = await publicClient.getBalance({ address: lotteryAddress as `0x${string}` });
-console.log("Lottery contract balance:", Number(lotteryBalance) / 10 ** 18, "ether");
+const tx = await lottery.write.requestRandomWords([false]);
+const txReceipt = await publicClient.waitForTransactionReceipt({ hash: tx });
+console.log("Random words requested in block:", txReceipt.blockNumber);

@@ -1,7 +1,7 @@
 import { network } from "hardhat";
 import {env} from "../config/index.js";
 
-const playerValue = 5*10**18; // 1 ether in wei
+const playerValue = 6*10**18; // 1 ether in wei
 const lotteryAddress = env.lotteryAddress ?? "";
 if (!lotteryAddress) {
   throw new Error("Missing env: LOTTERY_ADDRESS");
@@ -36,7 +36,6 @@ const tx2 = await lottery.write.enter({
 })
 const tx2Receipt = await publicClient.waitForTransactionReceipt({ hash: tx2 });
 console.log("Player 2 entered the lottery in block:", tx2Receipt.blockNumber);
-
 console.log("Both players have entered the lottery.");
 const lotteryBalance = await publicClient.getBalance({ address: lotteryAddress as `0x${string}` });
 console.log("Lottery contract balance:", Number(lotteryBalance) / 10**18, "ether");
