@@ -11,6 +11,13 @@
 
 ---
 
+### 项目界面
+
+下面是项目前端界面的截图（位于 `web/` 子目录）：
+
+![Lottery UI screenshot](screenshot.png)
+
+
 ## 二、核心功能
 
 - **彩票合约（Lottery）**
